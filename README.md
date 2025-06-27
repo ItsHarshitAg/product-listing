@@ -4,7 +4,7 @@ A simple Django web application that implements a basic Product Listing and Chec
 
 ## Live Demo
 
-You can explore the live demo at [product-listing-demo.example.com](https://github.com/yourusername/product-listing) (update with your actual deployment URL when available).
+You can explore the project repository at [GitHub](https://github.com/ItsHarshitAg/product-listing). A live demo will be available soon.
 
 ## Features
 
