@@ -1,0 +1,167 @@
+/* General styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    flex: 1;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Product listing styles */
+.product-image {
+    height: 200px;
+    object-fit: contain;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+}
+
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Cart styles */
+.cart-item-image {
+    border-radius: 4px;
+    object-fit: contain;
+    background-color: #f8f9fa;
+    width: 50px;
+    height: 50px;
+}
+
+#message-container, #cart-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    min-width: 300px;
+}
+
+.quantity-control {
+    width: 120px;
+    display: flex;
+    align-items: center;
+}
+
+.quantity-control .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quantity-input {
+    width: 40px;
+    text-align: center;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+/* Button styles */
+.btn {
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    border-color: #3a56d4;
+}
+
+.btn-success {
+    background-color: #38b000;
+    border-color: #38b000;
+}
+
+.btn-success:hover {
+    background-color: #2d9900;
+    border-color: #2d9900;
+}
+
+.btn-danger {
+    background-color: #ef233c;
+    border-color: #ef233c;
+}
+
+.btn-danger:hover {
+    background-color: #d90429;
+    border-color: #d90429;
+}
+
+/* Custom navbar */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.bg-primary {
+    background-color: #4361ee !important;
+}
+
+/* Animations */
+.alert {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .product-image {
+        height: 150px;
+    }
+    
+    #message-container, #cart-message {
+        width: 90%;
+        right: 5%;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}

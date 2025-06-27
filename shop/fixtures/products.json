@@ -1,0 +1,68 @@
+[
+  {
+    "model": "shop.product",
+    "pk": 1,
+    "fields": {
+      "name": "Smartphone X",
+      "description": "Latest smartphone with advanced features and a high-resolution camera.",
+      "price": "699.99",
+      "stock": 15,
+      "image": "products/smartphone.jpeg"
+    }
+  },
+  {
+    "model": "shop.product",
+    "pk": 2,
+    "fields": {
+      "name": "Laptop Pro",
+      "description": "Powerful laptop with fast processor and high performance for professionals.",
+      "price": "1299.99",
+      "stock": 8,
+      "image": "products/laptop.jpeg"
+    }
+  },
+  {
+    "model": "shop.product",
+    "pk": 3,
+    "fields": {
+      "name": "Wireless Headphones",
+      "description": "Premium wireless headphones with noise cancellation and superior sound quality.",
+      "price": "199.99",
+      "stock": 25,
+      "image": "products/wireless_headphone.webp"
+    }
+  },
+  {
+    "model": "shop.product",
+    "pk": 4,
+    "fields": {
+      "name": "Smart Watch",
+      "description": "Feature-rich smartwatch with health monitoring and notification capabilities.",
+      "price": "249.99",
+      "stock": 12,
+      "image": "products/smartwatch.webp"
+    }
+  },
+  {
+    "model": "shop.product",
+    "pk": 5,
+    "fields": {
+      "name": "Bluetooth Speaker",
+      "description": "Portable Bluetooth speaker with 20 hours of battery life and water resistance.",
+      "price": "89.99",
+      "stock": 30,
+      "image": "products/speaker.png"
+    }
+  },
+  {
+    "model": "shop.product",
+    "pk": 6,
+    "fields": {
+      "name": "Digital Camera",
+      "description": "High-resolution digital camera for photography enthusiasts with 4K video capability.",
+      "price": "549.99",
+      "stock": 6,
+      "image": "products/digital_camera.webp"
+    }
+  }
+]

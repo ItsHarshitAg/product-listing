@@ -1,0 +1,382 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Shopping Cart</h1>
+
+<div id="cart-message"></div>
+
+<div id="cart-container">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Cart Items</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover" id="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items">
+                            <!-- Cart items will be added here -->
+                        </tbody>
+                    </table>
+                    <div id="empty-cart-message" class="text-center py-4 d-none">
+                        <h5>Your cart is empty</h5>
+                        <a href="{% url 'index' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-shopping-basket"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5>Total:</h5>
+                        <h5 id="cart-total">$0.00</h5>
+                    </div>
+                    <button id="checkout-btn" class="btn btn-success w-100">
+                        <i class="fas fa-check-circle"></i> Proceed to Checkout
+                    </button>
+                    <a href="{% url 'index' %}" class="btn btn-outline-primary w-100 mt-3">
+                        <i class="fas fa-arrow-left"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="cart-item-template">
+    <tr>
+        <td>
+            <div class="d-flex align-items-center">
+                <img src="" alt="Product" class="me-2 cart-item-image" style="width: 50px; height: 50px; object-fit: cover;">
+                <span class="cart-item-name"></span>
+            </div>
+        </td>
+        <td class="cart-item-price"></td>
+        <td>
+            <div class="quantity-control">
+                <button class="btn btn-sm btn-outline-secondary quantity-decrease" data-product-id="">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <input type="number" class="quantity-input" value="1" min="1" readonly>
+                <button class="btn btn-sm btn-outline-secondary quantity-increase" data-product-id="">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </td>
+        <td class="cart-item-total"></td>
+        <td>
+            <button class="btn btn-sm btn-danger remove-from-cart" data-product-id="">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load cart contents when page loads
+        loadCart();
+        
+        // Setup checkout button
+        document.getElementById('checkout-btn').addEventListener('click', checkout);
+    });
+
+    async function loadCart() {
+        try {
+            const response = await fetch('/api/cart/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch cart');
+            }
+            
+            const cart = await response.json();
+            displayCart(cart);
+            updateCartCount(); // Update the cart count in navbar
+        } catch (error) {
+            console.error('Error:', error);
+            showCartMessage('Error loading cart. Please try again.', 'danger');
+        }
+    }
+
+    function displayCart(cart) {
+        const itemsContainer = document.getElementById('cart-items');
+        const template = document.getElementById('cart-item-template');
+        const emptyMessage = document.getElementById('empty-cart-message');
+        const cartTable = document.getElementById('cart-table');
+        
+        itemsContainer.innerHTML = '';
+        
+        // Update total
+        document.getElementById('cart-total').textContent = `$${cart.total.toFixed(2)}`;
+        
+        // Show empty cart message if no items
+        if (cart.items.length === 0) {
+            emptyMessage.classList.remove('d-none');
+            cartTable.classList.add('d-none');
+            document.getElementById('checkout-btn').disabled = true;
+            return;
+        }
+        
+        // Otherwise, show cart items
+        emptyMessage.classList.add('d-none');
+        cartTable.classList.remove('d-none');
+        document.getElementById('checkout-btn').disabled = false;
+        
+        cart.items.forEach(item => {
+            const itemElement = template.content.cloneNode(true);
+            
+            // Set item data
+            const image = itemElement.querySelector('.cart-item-image');
+            image.src = item.image || '/static/images/no-image.jpg';
+            image.alt = item.name;
+            
+            // Handle image loading errors
+            image.onerror = function() {
+                this.onerror = null;
+                this.src = '/static/images/no-image.jpg';
+            };
+            
+            itemElement.querySelector('.cart-item-name').textContent = item.name;
+            itemElement.querySelector('.cart-item-price').textContent = `$${item.price.toFixed(2)}`;
+            
+            // Set quantity input value
+            const quantityInput = itemElement.querySelector('.quantity-input');
+            quantityInput.value = item.quantity;
+            
+            // Set up quantity controls
+            const decreaseBtn = itemElement.querySelector('.quantity-decrease');
+            const increaseBtn = itemElement.querySelector('.quantity-increase');
+            
+            decreaseBtn.dataset.productId = item.id;
+            increaseBtn.dataset.productId = item.id;
+            
+            decreaseBtn.addEventListener('click', () => updateQuantity(item.id, 'decrease'));
+            increaseBtn.addEventListener('click', () => updateQuantity(item.id, 'increase'));
+            
+            itemElement.querySelector('.cart-item-total').textContent = `$${item.item_total.toFixed(2)}`;
+            
+            const removeButton = itemElement.querySelector('.remove-from-cart');
+            removeButton.dataset.productId = item.id;
+            removeButton.addEventListener('click', () => removeFromCart(item.id, item.name));
+            
+            itemsContainer.appendChild(itemElement);
+        });
+    }
+
+    async function removeFromCart(productId, productName) {
+        try {
+            const response = await fetch('/api/cart/remove/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to remove product from cart');
+            }
+            
+            const data = await response.json();
+            showCartMessage(`${productName} removed from cart.`, 'info');
+            loadCart(); // Reload cart contents
+        } catch (error) {
+            console.error('Error:', error);
+            showCartMessage('Error removing product from cart. Please try again.', 'danger');
+        }
+    }
+
+    async function checkout() {
+        try {
+            const response = await fetch('/api/checkout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            // Get response data
+            const data = await response.json();
+            
+            if (!response.ok) {
+                if (data.error) {
+                    showCartMessage(data.error, 'warning');
+                } else {
+                    throw new Error('Checkout failed');
+                }
+                return;
+            }
+            
+            // Create receipt modal for successful checkout
+            showReceipt(data);
+            
+            // Clear cart display
+            loadCart();
+        } catch (error) {
+            console.error('Error:', error);
+            showCartMessage('Checkout failed. Please try again.', 'danger');
+        }
+    }
+    
+    function showReceipt(data) {
+        // Create modal element
+        const modalHtml = `
+            <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="receiptModalLabel">
+                                <i class="fas fa-check-circle me-2"></i> Order Confirmation
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-success">
+                                ${data.message}
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3">Purchased Items:</h6>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.purchased_items.map(item => `
+                                        <tr>
+                                            <td>${item.name}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>$${item.price.toFixed(2)}</td>
+                                            <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total:</th>
+                                        <th>$${data.purchased_items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            <div class="text-center mt-4">
+                                <p><i class="fas fa-truck me-2"></i> Your order will be shipped soon!</p>
+                                <p class="mb-0 text-muted small">Order ID: ${Date.now()}</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{% url 'index' %}" class="btn btn-primary">
+                                <i class="fas fa-shopping-basket me-2"></i> Continue Shopping
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to document
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+        modal.show();
+        
+        // Clean up modal after it's hidden
+        document.getElementById('receiptModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+
+    function showCartMessage(message, type) {
+        const container = document.getElementById('cart-message');
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 300);
+            }
+        }, 3000);
+    }
+
+    async function updateCartCount() {
+        try {
+            const response = await fetch('/api/cart/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch cart');
+            }
+            
+            const cart = await response.json();
+            document.getElementById('cart-count').textContent = cart.count;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async function updateQuantity(productId, action) {
+        try {
+            const response = await fetch('/api/cart/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1,
+                    action: action
+                })
+            });
+            
+            // Get response data
+            const data = await response.json();
+            
+            // Check for errors
+            if (!response.ok) {
+                if (data.error && data.error.includes('Not enough stock')) {
+                    showCartMessage(`${data.error}`, 'warning');
+                } else {
+                    throw new Error(data.error || 'Failed to update cart');
+                }
+            } else {
+                // Success, reload cart
+                loadCart();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showCartMessage('Error updating quantity. Please try again.', 'danger');
+        }
+    }
+</script>
+{% endblock %}

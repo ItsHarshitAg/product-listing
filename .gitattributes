@@ -1,0 +1,27 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly declare text files to be normalized
+*.py text
+*.html text
+*.css text
+*.js text
+*.md text
+*.json text
+*.yml text
+*.yaml text
+*.xml text
+*.txt text
+
+# Declare binary files to avoid modification
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+
+# Handle executable files properly
+*.exe binary
+*.sh text eol=lf
+*.bat text eol=crlf

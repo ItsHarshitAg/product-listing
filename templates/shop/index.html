@@ -1,0 +1,259 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Products - Shop{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h1>Product Listing</h1>
+    <div class="d-flex align-items-center">
+        <div class="form-check form-switch me-3">
+            <input class="form-check-input" type="checkbox" id="in-stock-filter">
+            <label class="form-check-label" for="in-stock-filter">In Stock Only</label>
+        </div>
+        <select id="sort-products" class="form-select">
+            <option value="default">Default Sorting</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="name">Name</option>
+        </select>
+    </div>
+</div>
+
+<div id="message-container"></div>
+
+<div id="products-container" class="row"></div>
+
+<template id="product-template">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="position-relative">
+                <img src="" class="card-img-top product-image" alt="Product Image">
+                <span class="position-absolute top-0 end-0 badge bg-primary m-2 product-badge"></span>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="card-title product-name mb-0"></h5>
+                    <span class="badge bg-success product-price fs-6"></span>
+                </div>
+                <div class="mt-2 mb-3">
+                    <div class="d-flex align-items-center text-muted mb-2">
+                        <i class="fas fa-box me-2"></i>
+                        <span class="product-stock-info"></span>
+                    </div>
+                </div>
+                <p class="card-text product-description flex-grow-1"></p>
+                <div class="d-grid">
+                    <button class="btn btn-primary add-to-cart" data-product-id="">
+                        <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch products when page loads
+        fetchProducts();
+        updateCartCount();
+        
+        // Add event listeners for filters
+        document.getElementById('in-stock-filter').addEventListener('change', () => {
+            fetchProducts();
+        });
+        
+        document.getElementById('sort-products').addEventListener('change', () => {
+            fetchProducts();
+        });
+    });
+
+    async function fetchProducts() {
+        try {
+            const response = await fetch('/api/products/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch products');
+            }
+            
+            const products = await response.json();
+            displayProducts(products);
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('Error loading products. Please try again later.', 'danger');
+        }
+    }
+
+    function displayProducts(products) {
+        const container = document.getElementById('products-container');
+        const template = document.getElementById('product-template');
+        
+        container.innerHTML = '';
+        
+        if (products.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center py-5"><p class="fs-4 text-muted">No products available.</p></div>';
+            return;
+        }
+        
+        // Apply sort if needed
+        const sortSelect = document.getElementById('sort-products');
+        const sortValue = sortSelect.value;
+        
+        // Check in-stock filter
+        const inStockFilter = document.getElementById('in-stock-filter');
+        const showOnlyInStock = inStockFilter.checked;
+        
+        // Filter and sort products
+        let filteredProducts = [...products];
+        
+        // Apply in-stock filter if checked
+        if (showOnlyInStock) {
+            filteredProducts = filteredProducts.filter(product => product.stock > 0);
+        }
+        
+        // Apply sorting
+        if (sortValue === 'price-low') {
+            filteredProducts.sort((a, b) => a.price - b.price);
+        } else if (sortValue === 'price-high') {
+            filteredProducts.sort((a, b) => b.price - a.price);
+        } else if (sortValue === 'name') {
+            filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        
+        // Show message if no products after filtering
+        if (filteredProducts.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center py-5"><p class="fs-4 text-muted">No products match your filter criteria.</p></div>';
+            return;
+        }
+        
+        filteredProducts.forEach(product => {
+            const productElement = template.content.cloneNode(true);
+            
+            // Set product data
+            const image = productElement.querySelector('.product-image');
+            image.src = product.image || '/static/images/no-image.jpg';
+            image.alt = product.name;
+            
+            // Improve image loading
+            image.onerror = function() {
+                this.onerror = null;
+                this.src = '/static/images/no-image.jpg';
+            };
+            
+            // Product badge (New or Out of Stock)
+            const badge = productElement.querySelector('.product-badge');
+            if (product.stock <= 0) {
+                badge.textContent = 'Out of Stock';
+                badge.classList.remove('bg-primary');
+                badge.classList.add('bg-danger');
+            } else {
+                badge.textContent = 'In Stock';
+            }
+            
+            productElement.querySelector('.product-name').textContent = product.name;
+            productElement.querySelector('.product-description').textContent = product.description;
+            productElement.querySelector('.product-price').textContent = `$${product.price.toFixed(2)}`;
+            
+            // Stock info
+            const stockInfo = productElement.querySelector('.product-stock-info');
+            stockInfo.textContent = product.stock > 0 ? `${product.stock} units available` : 'Currently unavailable';
+            
+            const addButton = productElement.querySelector('.add-to-cart');
+            addButton.dataset.productId = product.id;
+            
+            // Disable button if out of stock
+            if (product.stock <= 0) {
+                addButton.disabled = true;
+                addButton.classList.remove('btn-primary');
+                addButton.classList.add('btn-secondary');
+                addButton.innerHTML = '<i class="fas fa-times-circle me-2"></i> Out of Stock';
+            } else {
+                addButton.addEventListener('click', () => addToCart(product.id, product.name));
+            }
+            
+            container.appendChild(productElement);
+        });
+    }
+
+    async function addToCart(productId, productName) {
+        try {
+            const response = await fetch('/api/cart/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
+                })
+            });
+            
+            // Get response data
+            const data = await response.json();
+            
+            // Check for errors
+            if (!response.ok) {
+                if (data.error) {
+                    showMessage(data.error, 'warning');
+                } else {
+                    throw new Error('Failed to add product to cart');
+                }
+                return;
+            }
+            
+            // Show success message
+            showMessage(`${productName} added to cart!`, 'success');
+            
+            // Animate cart icon
+            const cartCount = document.getElementById('cart-count');
+            cartCount.classList.add('animate__animated', 'animate__heartBeat');
+            setTimeout(() => {
+                cartCount.classList.remove('animate__animated', 'animate__heartBeat');
+            }, 1000);
+            
+            // Update cart count
+            updateCartCount();
+            
+            // Update product stock in UI
+            fetchProducts();
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('Error adding product to cart. Please try again.', 'danger');
+        }
+    }
+
+    function showMessage(message, type) {
+        const container = document.getElementById('message-container');
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 300);
+            }
+        }, 3000);
+    }
+
+    async function updateCartCount() {
+        try {
+            const response = await fetch('/api/cart/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch cart');
+            }
+            
+            const cart = await response.json();
+            document.getElementById('cart-count').textContent = cart.count;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>
+{% endblock %}
