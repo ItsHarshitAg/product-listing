@@ -31,7 +31,7 @@ DEBUG = 'PYTHONANYWHEREHOST' not in os.environ
 if DEBUG:
     ALLOWED_HOSTS = []
 else:
-    ALLOWED_HOSTS = ['itsharshitag.pythonanywhere.com']
+    ALLOWED_HOSTS = ['itsharshitag.pythonanywhere.com', 'www.itsharshitag.pythonanywhere.com']
 
 
 # Application definition

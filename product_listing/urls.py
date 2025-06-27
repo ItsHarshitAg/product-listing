@@ -24,6 +24,6 @@ urlpatterns = [
     path("", include("shop.urls")),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files in both development and production
+# Note: In production, you should configure your web server to serve these files
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
